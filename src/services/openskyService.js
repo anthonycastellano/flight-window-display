@@ -57,7 +57,14 @@ export const fetchFlights = async () => {
     const token = await getValidToken();
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
-    const response = await fetch(OPENSKY_URL, { headers });
+    const params = new URLSearchParams({
+      lamin: (WINDOW_COORDS.lat - 0.1).toString(),
+      lomin: (WINDOW_COORDS.lng - 0.1).toString(),
+      lamax: (WINDOW_COORDS.lat + 0.1).toString(),
+      lomax: (WINDOW_COORDS.lng + 0.1).toString(),
+    });
+
+    const response = await fetch(`${OPENSKY_URL}?${params.toString()}`, { headers });
     
     if (!response.ok) {
       if (response.status === 401) {
