@@ -2,7 +2,7 @@
  * OpenSky Network API service for fetching and filtering flight data.
  */
 
-const OPENSKY_URL = 'https://opensky-network.org/api/states/all';
+const OPENSKY_URL = '/api/flights';
 
 // Coordinates for Edgewater, Miami (approx window location)
 // Adjust these to your exact window location
