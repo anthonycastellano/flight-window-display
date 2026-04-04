@@ -11,6 +11,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/flights/, '/api/states/all'),
       },
+      '/auth': {
+        target: 'https://auth.opensky-network.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/auth/, '/auth/realms/opensky-network/protocol/openid-connect/token'),
+      },
     },
   },
 })

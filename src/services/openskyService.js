@@ -2,7 +2,11 @@
  * OpenSky Network API service for fetching and filtering flight data.
  */
 
+const AUTH_URL = '/auth';
 const OPENSKY_URL = '/api/flights';
+
+const CLIENT_ID = import.meta.env.VITE_OPENSKY_CLIENT_ID;
+const CLIENT_SECRET = import.meta.env.VITE_OPENSKY_CLIENT_SECRET;
 
 // Coordinates for Edgewater, Miami (approx window location)
 // Adjust these to your exact window location
@@ -21,20 +25,77 @@ const VIEW_CONFIG = {
   maxDistanceKm: 10,       // Distance from window to look at
 };
 
+let accessToken = null;
+let tokenExpiry = null;
+
+/**
+ * Fetches a new access token using client credentials.
+ */
+const fetchAccessToken = async () => {
+  try {
+    const response = await fetch(AUTH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch token: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    accessToken = data.access_token;
+    // Set expiry with a 30-second margin
+    tokenExpiry = Date.now() + (data.expires_in * 1000) - 30000;
+    return accessToken;
+  } catch (error) {
+    console.error('Error fetching OpenSky token:', error);
+    return null;
+  }
+};
+
+/**
+ * Ensures we have a valid access token.
+ */
+const getValidToken = async () => {
+  if (!accessToken || !tokenExpiry || Date.now() > tokenExpiry) {
+    return await fetchAccessToken();
+  }
+  return accessToken;
+};
+
 /**
  * Fetches all aircraft states from OpenSky Network.
- * Note: This can be heavy. In a real app, you'd use a bounding box.
  */
 export const fetchFlights = async () => {
   try {
-    const response = await fetch(OPENSKY_URL);
-    if (!response.ok) throw new Error('Network response was not ok');
+    const token = await getValidToken();
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    
+    const response = await fetch(OPENSKY_URL, { headers });
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Token might have expired unexpectedly
+        accessToken = null;
+        return await fetchFlights();
+      }
+      throw new Error(`Network response was not ok: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     return data.states || [];
   } catch (error) {
     console.error('Error fetching flights from OpenSky:', error);
     return [];
   }
+
 };
 
 /**
@@ -73,7 +134,6 @@ export const filterVisibleFlights = (flights) => {
     if (dist > VIEW_CONFIG.maxDistanceKm) return false;
 
     // 2. Check heading (true_track)
-    // true_track is the direction the plane is moving
     const heading = true_track;
     const isHeadingCorrect = 
       (heading >= VIEW_CONFIG.headingRange[0] && heading <= 360) ||
@@ -91,7 +151,7 @@ export const filterVisibleFlights = (flights) => {
     country: flight[2],
     latitude: flight[6],
     longitude: flight[7],
-    altitude: flight[8],
+    altitude: flight[7], // Fixed: was using index 8 which is on_ground in the original array mapping if not careful
     velocity: flight[9],
     heading: flight[10]
   }));
