@@ -1,5 +1,5 @@
 import { WINDOW_COORDS, VIEW_CONFIG, OPENSKY_URL, AUTH_URL } from '../config';
-import { getDistance } from '../utils/geoUtils';
+import { getDistance, calculateBearing } from '../utils/geoUtils';
 
 const CLIENT_ID = import.meta.env.VITE_OPENSKY_CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.VITE_OPENSKY_CLIENT_SECRET;
@@ -144,12 +144,18 @@ export const filterVisibleFlights = (flights) => {
       
       if (dist > VIEW_CONFIG.maxDistanceKm) return false;
       
-      // 2. Check heading
-      const heading = flight.heading;
-      const isHeadingCorrect = 
-        (heading >= VIEW_CONFIG.headingRange[0] && heading <= 360) ||
-        (heading >= 0 && heading <= VIEW_CONFIG.headingRange[1]);
+      // 2. Check if plane is within the window's angular sector (bearing from window)
+      const bearingFromWindow = calculateBearing(
+        WINDOW_COORDS.lat,
+        WINDOW_COORDS.lng,
+        flight.latitude,
+        flight.longitude
+      );
 
-      return isHeadingCorrect;
+      const isWithinSector =
+        (bearingFromWindow >= VIEW_CONFIG.headingRange[0] && bearingFromWindow <= 360) ||
+        (bearingFromWindow >= 0 && bearingFromWindow <= VIEW_CONFIG.headingRange[1]);
+
+      return isWithinSector;
     });
 };
