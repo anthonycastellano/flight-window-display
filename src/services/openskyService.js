@@ -158,5 +158,20 @@ export const filterVisibleFlights = (flights) => {
         (bearingFromWindow >= 0 && bearingFromWindow <= VIEW_CONFIG.headingRange[1]);
 
       return isWithinSector;
+    })
+    .sort((a, b) => {
+      const distanceA = Number.isFinite(a.distanceKm) ? a.distanceKm : Infinity;
+      const distanceB = Number.isFinite(b.distanceKm) ? b.distanceKm : Infinity;
+
+      if (distanceA !== distanceB) {
+        return distanceA - distanceB;
+      }
+
+      const callsignCompare = (a.callsign || '').localeCompare(b.callsign || '');
+      if (callsignCompare !== 0) {
+        return callsignCompare;
+      }
+
+      return (a.icao24 || '').localeCompare(b.icao24 || '');
     });
 };
