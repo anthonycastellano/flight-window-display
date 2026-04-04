@@ -24,7 +24,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [viewMode, setViewMode] = useState('map'); // 'map' or 'list'
+  const [viewMode, setViewMode] = useState('split'); // 'map', 'list', or 'split'
 
   const updateFlights = async () => {
     setLoading(true);
@@ -44,60 +44,71 @@ function App() {
 
   useEffect(() => {
     updateFlights();
-    const interval = setInterval(updateFlights, 30000); // Poll every 30s
+    const interval = setInterval(updateFlights, 30000); 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 p-4 flex justify-between items-center sticky top-0 z-[1000]">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-            <Plane className="w-5 h-5 text-blue-600" />
-            Edgewater Skies
-          </h1>
-          <p className="text-[10px] uppercase tracking-widiter text-slate-400 font-medium">
-            Live Tracking • {lastUpdated.toLocaleTimeString()}
-          </p>
+    <div className="h-screen w-screen overflow-hidden flex flex-col text-slate-200 font-sans bg-[#0a0a0a]">
+      {/* Floating HUD Header */}
+      <header className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-4 px-4 py-2 glass rounded-full shadow-2xl">
+        <div className="flex items-center gap-2 px-2">
+          <Plane className="w-4 h-4 text-blue-500" />
+          <span className="text-sm font-bold tracking-tight uppercase">Edgewater Skies</span>
         </div>
         
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={updateFlights}
-            disabled={loading}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          <div className="h-4 w-[1px] bg-slate-200 mx-1" />
-          <div className="flex bg-slate-100 p-1 rounded-lg">
-            <button 
-              onClick={() => setViewMode('map')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'map' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
-            >
-              <MapIcon className="w-5 h-5" />
-            </button>
-            <button 
-              onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
-            >
-              <ListIcon className="w-5 h-5" />
-            </button>
-          </div>
+        <div className="h-4 w-[1px] bg-white/10" />
+
+        <div className="flex items-center gap-3 text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+          <span>{lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          <div className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
         </div>
+
+        <div className="h-4 w-[1px] bg-white/10" />
+
+        <div className="flex items-center gap-1 p-1 bg-white/5 rounded-full border border-white/10">
+          <button 
+            onClick={() => setViewMode('map')}
+            className={`p-1.5 rounded-full transition-all ${viewMode === 'map' || viewMode === 'split' ? 'bg-blue-500 text-white' : 'text-slate/400 hover:text-white'}`}
+          >
+            <MapIcon className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => setViewMode('split')}
+            className={`p-1.5 rounded-full transition-all ${viewMode === 'split' ? 'bg-blue-500 text-white' : 'text-slate/400 hover:text-white'}`}
+          >
+            <div className="w-4 h-4 border-2 border-current rounded-sm" />
+          </button>
+          <button 
+            onClick={() => setViewMode('list')}
+            className={`p-1.5 rounded-full transition-all ${viewMode === 'list' ? 'bg-blue-500 text-white' : 'text-slate/400 hover:text-white'}`}
+          >
+            <ListIcon className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="h-4 w-[1px] bg-white/10" />
+
+        <button 
+          onClick={updateFlights}
+          disabled={loading}
+          className="p-1.5 hover:bg-white/10 rounded-full transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </button>
       </header>
 
-      <main className="flex-1 relative overflow-hidden">
-        {error && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-red-50 text-red-600 px-4 py-2 rounded-full text-sm border border-red-100 shadow-sm">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] glass-card text-red-400 px-4 py-2 rounded-xl text-xs border-red-500/30 shadow-xl">
+          {error}
+        </div>
+      )}
 
-        {viewMode === 'map' ? (
-          <div className="h-full w-full">
-            <MapContainer 
+      <main className="flex-1 flex overflow-hidden">
+        {/* Map Section */}
+        {(viewMode === 'map' || viewMode === 'split') && (
+          <div className={`flex-1 relative h-full transition-all duration-500 ${viewMode === 'split' ? 'w-2/3' : 'w-full'}`}>
+<MapContainer 
               center={EDW_COORDS} 
               zoom={13} 
               className="h-full w-full z-0"
@@ -105,44 +116,48 @@ function App() {
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               />
               {flights.map((flight) => (
                 <Marker 
                   key={flight.icao24} 
                   position={[flight.latitude, flight.longitude]}
                 >
-                  <Popup>
-                    <div className="font-sans">
+                  <Popup className="custom-popup">
+                    <div className="text-slate-900 font-sans p-1">
                       <p className="font-bold text-blue-600">{flight.callsign}</p>
-                      <p className="text-xs text-slate-500">Alt: {Math.round(flight.altitude)}m</p>
-                      <p className="text-xs text-slateslate-500">Speed: {Math.round(flight.velocity * 3.6)} km/h</p>
+                      <p className="text-[10px] text-slate-500">Alt: {Math.round(flight.altitude)}m</p>
+                      <p className="text-[10px] text-slate-500">Speed: {Math.round(flight.velocity * 3.6)} km/h</p>
                     </div>
                   </Popup>
                 </Marker>
               ))}
             </MapContainer>
           </div>
-        ) : (
-          <div className="p-4 max-w-2xl mx-auto overflow-y-auto h-full">
-            <div className="space-y-3">
+        )}
+
+        {/* List Section */}
+        {(viewMode === 'list' || viewMode === 'split') && (
+          <div className={`h-full transition-all duration-500 overflow-y-auto p-6 ${viewMode === 'split' ? 'w-1/3 border-l border-white/10' : 'w-full max-w-xl mx-auto'}`}>
+            <div className="flex flex-col gap-3">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Active Flights</h2>
               {flights.length === 0 ? (
-                <div className="text-center py-20 text-slate-400 italic">
-                  No flights currently in your view.
+                <div className="text-center py-20 text-slate-600 italic text-sm">
+                  No aircraft in corridor.
                 </div>
-                  ) : (
+              ) : (
                 flights.map((flight) => (
                   <div 
                     key={flight.icao24}
-                    className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center"
+                    className="glass-card p-4 rounded-2xl flex justify-between items-center hover:border-blue-500/50 transition-all group"
                   >
                     <div>
-                      <h3 className="font-bold text-slate-800">{flight.callsign}</h3>
-                      <p className="text-xs text-slate-500">{flight.country}</p>
+                      <h3 className="font-bold text-slate-100 group-hover:text-blue-400 transition-colors">{flight.callsign}</h3>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-tight">{flight.country}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-blue-600">{Math.round(flight.altitude)}m</p>
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wide">
+                      <p className="text-sm font-mono text-blue-400">{Math.round(flight.altitude)}m</p>
+                      <p className="text-[10px] text-opacity-50 text-slate-500">
                         {Math.round(flight.velocity * 3.6)} km/h
                       </p>
                     </div>
@@ -153,12 +168,9 @@ function App() {
           </div>
         )}
       </main>
-
-      <footer className="bg-white border-t border-slate-200 p-3 text-center text-[10px] text-slate-400 uppercase tracking-widest">
-        Visualizing airspace near Edgewater, Miami
-      </footer>
     </div>
   );
 }
 
-export default App
+export default App;
+

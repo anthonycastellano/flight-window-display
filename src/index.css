@@ -31,19 +31,53 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+:root {
+  --bg: #0a0a0a;
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --accent: #3b82f6;
+  --accent-bg: rgba(59, 130, 246, 0.1);
+  --accent-border: rgba(59, 130, 246, 0.3);
+  --glass-bg: rgba(17, 24, 39, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --card-bg: rgba(31, 41, 55, 0.5);
+  --font-sans: system-ui, -apple-system, sans-serif;
+  
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
+  text-rendering: optimizeLegance;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Utility for glassmorphism */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+}
+
 
   #social .button-icon {
     filter: invert(1) brightness(2);
