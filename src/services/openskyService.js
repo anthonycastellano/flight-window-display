@@ -93,18 +93,22 @@ const mapFlightState = (flight) => {
     icao24, 
     callsign, 
     country, 
-    _t, // time_position
-    _l, // last_contact
+    _time_position, 
+    last_contact, 
     longitude, 
     latitude, 
     baro_altitude, 
     on_ground, 
     velocity, 
     true_track, 
-    _v, // vertical_rate
-    _g  // geo_altitude
+    vertical_rate, 
+    sensors, 
+    geo_altitude,
+    squawk,
+    spi,
+    position_source,
+    category
   ] = flight;
-
 
   return {
     icao24,
@@ -128,7 +132,7 @@ export const filterVisibleFlights = (flights) => {
   return flights
     .map(mapFlightState)
     .filter(flight => {
-      if (!flight.latitude || !flight.lat || flight.on_ground) return false;
+      if (!flight.latitude || flight.on_ground) return false;
       
       // 1. Check distance
       const dist = getDistance(
