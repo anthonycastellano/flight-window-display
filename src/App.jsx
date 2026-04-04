@@ -67,21 +67,6 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    const performUpdate = async () => {
-      if (isMounted) await updateFlights();
-    };
-
-    performUpdate();
-    const interval = setInterval(performUpdate, 10000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-
   return (
     <div className={`h-screen w-screen overflow-hidden flex flex-col font-sans transition-colors duration-1000 ${isDayTime ? 'bg-slate-50 text-slate-900' : 'bg-zinc-950 text-slate-100'}`}>
       <main className="relative flex-1 flex flex-col">
