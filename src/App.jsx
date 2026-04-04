@@ -38,15 +38,7 @@ function App() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-zinc-950 text-slate-100">
       <main className="relative h-full w-full p-4 md:p-8">
-        <section className="h-full w-full rounded-3xl border border-zinc-800 bg-zinc-900/85 p-6 md:p-10 shadow-2xl">
-          <header className="mb-8">
-            <p className="text-sm md:text-base uppercase tracking-[0.2em] text-slate-400">
-              Edgewater Corridor
-            </p>
-            <h1 className="mt-2 text-3xl md:text-5xl font-semibold tracking-tight text-slate-50">
-              Live Flights
-            </h1>
-          </header>
+        <section className="h-full w-full rounded-3xl border border-zinc-800/80 bg-zinc-900/40 p-4 md:p-7 shadow-2xl">
           <FlightList flights={flights} windowCoords={WINDOW_COORDS} />
         </section>
         {error && (
@@ -74,9 +66,9 @@ function FlightList({ flights, windowCoords }) {
     .slice(0, 3);
 
   return (
-    <div className="grid gap-5">
+    <div className="h-full grid content-center gap-4 md:gap-5">
       {closestFlights.length === 0 ? (
-        <div className="rounded-3xl border border-zinc-800 bg-zinc-950/60 py-24 text-center opacity-70 text-2xl italic">
+        <div className="rounded-3xl border border-zinc-800/80 bg-zinc-950/40 py-24 text-center opacity-70 text-2xl italic">
           No aircraft in corridor.
         </div>
       ) : (
@@ -108,28 +100,28 @@ function FlightItem({ flight, windowCoords }) {
     : 'N/A';
 
   return (
-    <article className="rounded-3xl border border-zinc-800 bg-zinc-950/70 px-5 py-6 md:px-8 md:py-8">
+    <article className="rounded-3xl border border-zinc-800/80 bg-zinc-950/55 px-5 py-6 md:px-8 md:py-8">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-4 md:gap-6 min-w-0">
           <div
-            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center shrink-0"
+            className="w-24 h-24 md:w-28 md:h-28 flex items-center justify-center shrink-0"
             style={{ transform: `rotate(${bearing}deg)` }}
           >
-            <ArrowUp className="w-12 h-12 md:w-14 md:h-14 text-sky-400" />
+            <ArrowUp className="w-20 h-20 md:w-24 md:h-24 text-sky-400" strokeWidth={2.25} />
           </div>
           <div className="min-w-0">
-            <h2 className="text-3xl md:text-5xl font-semibold leading-none tracking-tight truncate">
+            <h2 className="text-4xl md:text-6xl font-semibold leading-none tracking-tight truncate">
               {callsign}
             </h2>
-            <p className="mt-2 text-base md:text-xl text-slate-400 truncate">Country: {country}</p>
+            <p className="mt-2 text-lg md:text-2xl text-slate-400 truncate">Country: {country}</p>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-2xl md:text-4xl font-mono font-semibold text-sky-300">{
+          <p className="text-3xl md:text-5xl font-mono font-semibold text-sky-300">{
             distanceMiles
           }</p>
-          <p className="mt-2 text-base md:text-xl text-slate-300">Altitude: {heightFeet}</p>
-          <p className="mt-1 text-base md:text-xl text-slate-400">Speed: {speedMph}</p>
+          <p className="mt-2 text-lg md:text-2xl text-slate-300">Altitude: {heightFeet}</p>
+          <p className="mt-1 text-lg md:text-2xl text-slate-400">Speed: {speedMph}</p>
         </div>
       </div>
     </article>
