@@ -17,8 +17,8 @@ const WINDOW_COORDS = {
  * and within a certain distance.
  */
 const VIEW_CONFIG = {
-  headingRange: [330, 30], // North-ish: 330 to 360, and 0 to 30
-  maxDistanceKm: 20,       // Distance from window to look at
+  headingRange: [300, 60], // North-ish: 300 to 360, and 0 to 60
+  maxDistanceKm: 10,       // Distance from window to look at
 };
 
 /**
