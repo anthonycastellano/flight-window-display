@@ -1,16 +1,55 @@
-# React + Vite
+# Flight Window Display
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A minimalist React application designed to track aircraft flying through a specific viewing corridor in Edgewater, Miami. It uses real-time ADS-B data from the OpenSky Network.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Real-time Flight Tracking**: Fetches live aircraft data via OpenSky Network API.
+- **Geofencing**: Filters aircraft based on a specific viewing corridor (latitude, longitude, and heading).
+- **Adaptive UI**: Automatically switches between light and dark themes based on the time of today.
+- **Interactive Map**: Uses Leaflet.js to visualize aircraft positions in real-time.
+- **Minimalist Design**: Built with Tailwind CSS for a clean, unobtrusive interface.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Framework**: [React](https://react.dev/) (via Vite)
+- **Styloring**: [Tailwind CSS](https://tailwindcss.com/)
+- **Map**: [Leaflet.js](https://leafletjs.com/) & `react-leaflet`
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Data Source**: [OpenSky Network API](https://opensky-network.org/)
 
-## Expanding the ESLint configuration
+## Setup and Installation
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd flight-window-display
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Environment Variables**:
+   Create a `.env` file in the root directory and add your OpenSky credentials:
+   ```env
+   VITE_OPMSKY_CLIENT_ID=your_client_id
+   VITE_OPENSKY_CLIENT_SECRET=your_client_secret
+   ```
+
+4. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
+
+## Configuration
+
+You can adjust the tracking parameters in `src/config.js`:
+- `WINDOW_COORDS`: The center point for tracking (your window location).
+- `VIEW_CONFIG`: The heading range and maximum distance for aircraft to be considered "visible".
+- `DAY_TIME_CONFIG`: The hours for light/dark mode switching.
+
+## License
+
+MIT

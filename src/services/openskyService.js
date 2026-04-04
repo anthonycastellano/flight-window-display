@@ -1,29 +1,8 @@
-/**
- * OpenSky Network API service for fetching and filtering flight data.
- */
-
-const AUTH_URL = '/auth';
-const OPENSKY_URL = '/api/flights';
+import { WINDOW_COORDS, VIEW_CONFIG, OPENSKY_URL, AUTH_URL } from '../config';
+import { getDistance } from '../utils/geoUtils';
 
 const CLIENT_ID = import.meta.env.VITE_OPENSKY_CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.VITE_OPENSKY_CLIENT_SECRET;
-
-// Coordinates for Edgewater, Miami (approx window location)
-// Adjust these to your exact window location
-const WINDOW_COORDS = {
-  lat: 25.79, 
-  lng: -80.18
-};
-
-/**
- * Define the viewing corridor.
- * For a north-facing window, we look at planes within a certain heading range
- * and within a certain distance.
- */
-const VIEW_CONFIG = {
-  headingRange: [300, 60], // North-ish: 300 to 360, and 0 to 60
-  maxDistanceKm: 10,       // Distance from window to look at
-};
 
 let accessToken = null;
 let tokenExpiry = null;
@@ -95,79 +74,71 @@ export const fetchFlights = async () => {
     console.error('Error fetching flights from OpenSky:', error);
     return [];
   }
+};
 
+/**
+ * Maps a raw flight state array from OpenSky to a cleaner object.
+ * @param {Array} flight - A single flight state array from OpenSky
+ * @returns {Object}
+ */
+const mapFlightState = (flight) => {
+  const [
+    icao24, 
+    callsign, 
+    country, 
+    _t, // time_position
+    _l, // last_contact
+    longitude, 
+    latitude, 
+    baro_altitude, 
+    on_ground, 
+    velocity, 
+    true_track, 
+    _v, // vertical_rate
+    _g  // geo_altitude
+  ] = flight;
+
+
+  return {
+    icao24,
+    callsign: callsign?.trim() || 'Unknown',
+    country,
+    latitude,
+    longitude,
+    altitude: baro_altitude,
+    velocity,
+    heading: true_track,
+    on_ground
+  };
 };
 
 /**
  * Filters flights based on the viewing window configuration.
- * @param {Array} flights - Array of flight state arrays from OpenSky
- * @returns {Array} - Filtered flights
+ * @param {Array} flights - Array of raw flight state arrays from OpenSky
+ * @returns {Array} - Filtered and mapped flights
  */
 export const filterVisibleFlights = (flights) => {
-  return flights.filter(flight => {
-    const [
-      icao24, 
-      callsign, 
-      country, 
-      time_position, 
-      last_contact, 
-      longitude, 
-      latitude, 
-      baro_altitude, 
-      on_ground, 
-      velocity, 
-      true_track, 
-      vertical_rate, 
-      geo_altitude
-    ] = flight;
+  return flights
+    .map(mapFlightState)
+    .filter(flight => {
+      if (!flight.latitude || !flight.lat || flight.on_ground) return false;
+      
+      // 1. Check distance
+      const dist = getDistance(
+        WINDOW_COORDS.lat, 
+        WINDOW_COORDS.lng, 
+        flight.latitude, 
+        flight.longitude
+      );
+      
+      if (dist > VIEW_CONFIG.maxDistanceKm) return false;
+      
+      // 2. Check heading
+      const heading = flight.heading;
+      const isHeadingCorrect = 
+        (heading >= VIEW_CONFIG.headingRange[0] && heading <= 360) ||
+        (heading >= 0 && heading <= VIEW_CONFIG.headingRange[1]);
 
-    if (!latitude || !longitude) return false;
-
-    // 1. Check distance (simplified approximation)
-    const dist = getDistance(
-      WINDOW_COORDS.lat, 
-      WINDOW_COORDS.lng, 
-      latitude, 
-      longitude
-    );
-    
-    if (dist > VIEW_CONFIG.maxDistanceKm) return false;
-
-    // 2. Check heading (true_track)
-    const heading = true_track;
-    const isHeadingCorrect = 
-      (heading >= VIEW_CONFIG.headingRange[0] && heading <= 360) ||
-      (heading >= 0 && heading <= VIEW_CONFIG.headingRange[1]);
-
-    if (!isHeadingCorrect) return false;
-
-    // 3. Filter out ground aircraft
-    if (on_ground) return false;
-
-    return true;
-  }).map(flight => ({
-    icao24: flight[0],
-    callsign: flight[1]?.trim() || 'Unknown',
-    country: flight[2],
-    latitude: flight[6],
-    longitude: flight[7],
-    altitude: flight[7], // Fixed: was using index 8 which is on_ground in the original array mapping if not careful
-    velocity: flight[9],
-    heading: flight[10]
-  }));
+      return isHeadingCorrect;
+    });
 };
-
-/**
- * Haversine formula to calculate distance between two points in km.
- */
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
