@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { ArrowUp } from 'lucide-react';
 import { fetchFlights, filterVisibleFlights } from './services/openskyService';
 import { WINDOW_COORDS, DAY_TIME_CONFIG } from './config';
-import { calculateBearing } from './utils/geoUtils';
+import { calculateBearing, getDistance } from './utils/geoUtils';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default Leaflet marker icon issue in React
@@ -145,6 +145,21 @@ function FlightList({ flights, isDayTime, windowCoords }) {
 
 function FlightItem({ flight, isDayTime, windowCoords }) {
   const bearing = calculateBearing(windowCoords.lat, windowCoords.lng, flight.latitude, flight.longitude);
+  const country = flight.country || 'Unknown';
+  const heightFeet = Number.isFinite(flight.altitude)
+    ? `${Math.round(flight.altitude * 3.28084)}'`
+    : 'N/A';
+  const speedMph = Number.isFinite(flight.velocity)
+    ? `${Math.round(flight.velocity * 2.23694)} mph`
+    : 'N/A';
+  const distanceKm = Number.isFinite(flight.distanceKm)
+    ? flight.distanceKm
+    : (Number.isFinite(flight.latitude) && Number.isFinite(flight.longitude)
+      ? getDistance(windowCoords.lat, windowCoords.lng, flight.latitude, flight.longitude)
+      : null);
+  const distanceMiles = Number.isFinite(distanceKm)
+    ? `${(distanceKm * 0.621371).toFixed(distanceKm < 10 ? 1 : 0)} mi`
+    : 'N/A';
   
   return (
       <div
@@ -160,13 +175,16 @@ function FlightItem({ flight, isDayTime, windowCoords }) {
         </div>
         <div>
           <h3 className="font-bold leading-tight">{flight.callsign}</h3>
-          <p className={`text-[10px] uppercase tracking-tight ${isDayTime ? 'text-slate-500' : 'text-slate-400'}`}>{flight.country}</p>
+          <p className={`text-[10px] tracking-tight ${isDayTime ? 'text-slate-500' : 'text-slate-400'}`}>Country: {country}</p>
         </div>
       </div>
       <div className="text-right">
-        <p className="text-sm font-mono font-bold text-blue-500/80">{Math.round(flight.altitude)}m</p>
+        <p className="text-sm font-mono font-bold text-blue-500/80">Height: {heightFeet}</p>
         <p className={`text-[10px] opacity-60 ${isDayTime ? 'text-slate-500' : 'text-slate-400'}`}>
-          {Math.round(flight.velocity * 3.6)} km/h
+          Speed: {speedMph}
+        </p>
+        <p className={`text-[10px] opacity-60 ${isDayTime ? 'text-slate-500' : 'text-slate-400'}`}>
+          Distance: {distanceMiles}
         </p>
       </div>
     </div>

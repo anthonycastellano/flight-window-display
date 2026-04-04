@@ -141,6 +141,7 @@ export const filterVisibleFlights = (flights) => {
         flight.latitude, 
         flight.longitude
       );
+      flight.distanceKm = dist;
       
       if (dist > VIEW_CONFIG.maxDistanceKm) return false;
       
