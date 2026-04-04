@@ -1,44 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { ArrowUp } from 'lucide-react';
 import { fetchFlights, filterVisibleFlights } from './services/openskyService';
-import { WINDOW_COORDS, DAY_TIME_CONFIG } from './config';
+import { WINDOW_COORDS } from './config';
 import { calculateBearing, getDistance } from './utils/geoUtils';
-import 'leaflet/dist/leaflet.css';
-
-// Fix for default Leaflet marker icon issue in React
-import L from 'leaflet';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-L.Marker.prototype.options.icon = DefaultIcon;
-
-const EDT_COORDS = [WINDOW_COORDS.lat, WINDOW_COORDS.lng];
 
 function App() {
   const [flights, setFlights] = useState([]);
   const [error, setError] = useState(null);
-  const [isDayTime, setIsDayTime] = useState(true);
-
-  const checkDayTime = () => {
-    const hour = new Date().getHours();
-    return hour >= DAY_TIME_CONFIG.startHour && hour < DAY_TIME_CONFIG.endHour;
-  };
-
-  useEffect(() => {
-    const initialDayTime = checkDayTime();
-    setIsDayTime(initialDayTime);
-    const timeCheckInterval = setInterval(() => {
-      setIsDayTime(checkDayTime());
-    }, 60000);
-    return () => clearInterval(timeCheckInterval);
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -68,40 +36,21 @@ function App() {
   };
 
   return (
-    <div className={`h-screen w-screen overflow-hidden flex flex-col font-sans transition-colors duration-1000 ${isDayTime ? 'bg-slate-50 text-slate-900' : 'bg-zinc-950 text-slate-100'}`}>
-      <main className="relative flex-1 flex flex-col">
-        <div className="flex-1 relative">
-          <MapContainer
-            center={EDT_COORDS}
-            zoom={13}
-            className="h-full w-full z-0"
-            scrollWheelZoom={true}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url={isDayTime ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"}
-            />
-            {flights.map((flight) => (
-              <Marker
-                key={flight.icao24}
-                position={[flight.latitude, flight.longitude]}
-              >
-                <Popup className="custom-popup">
-                  <div className="font-sans p-1">
-                    <p className="font-bold text-blue-600">{flight.callsign}</p>
-                    <p className="text-[10px] text-slate-500">Alt: {Math.round(flight.altitude)}m</p>
-                    <p className="text-[10px] text-slate-500">Speed: {Math.round(flight.velocity * 3.6)} km/h</p>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-
-        <FlightList flights={flights} isDayTime={isDayTime} windowCoords={WINDOW_COORDS} />
-
+    <div className="h-screen w-screen overflow-hidden bg-zinc-950 text-slate-100">
+      <main className="relative h-full w-full p-4 md:p-8">
+        <section className="h-full w-full rounded-3xl border border-zinc-800 bg-zinc-900/85 p-6 md:p-10 shadow-2xl">
+          <header className="mb-8">
+            <p className="text-sm md:text-base uppercase tracking-[0.2em] text-slate-400">
+              Edgewater Corridor
+            </p>
+            <h1 className="mt-2 text-3xl md:text-5xl font-semibold tracking-tight text-slate-50">
+              Live Flights
+            </h1>
+          </header>
+          <FlightList flights={flights} windowCoords={WINDOW_COORDS} />
+        </section>
         {error && (
-          <div className={`absolute top-6 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 rounded-xl text-xs border shadow-xl ${isDayTime ? 'bg-red-50 border-red-200 text-red-600' : 'bg-red-950/80 border-red-800 text-red-400'}`}>
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 rounded-xl text-base border shadow-xl bg-red-950/80 border-red-800 text-red-300">
             {error}
           </div>
         )}
@@ -110,69 +59,80 @@ function App() {
   );
 }
 
-function FlightList({ flights, isDayTime, windowCoords }) {
+function FlightList({ flights, windowCoords }) {
+  const closestFlights = flights
+    .map((flight) => {
+      const resolvedDistanceKm = Number.isFinite(flight.distanceKm)
+        ? flight.distanceKm
+        : (Number.isFinite(flight.latitude) && Number.isFinite(flight.longitude)
+          ? getDistance(windowCoords.lat, windowCoords.lng, flight.latitude, flight.longitude)
+          : Number.POSITIVE_INFINITY);
+
+      return { ...flight, resolvedDistanceKm };
+    })
+    .sort((a, b) => a.resolvedDistanceKm - b.resolvedDistanceKm)
+    .slice(0, 3);
+
   return (
-    <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-xl max-h-[40%] overflow-y-auto p-4 rounded-3xl shadow-2xl backdrop-blur-md border transition-colors duration-1000 ${isDayTime ? 'bg-white/70 border-slate-200 text-slate-900' : 'bg-zinc-900/70 border-zinc-800 text-slate-100'}`}>
-      <div className="flex flex-col gap-3">
-        {flights.length === 0 ? (
-          <div className="text-center py-10 opacity-50 italic text-sm">
-            No aircraft in corridor.
-          </div>
-        ) : (
-          flights.map((flight) => (
-            <FlightItem key={flight.icao24} flight={flight} isDayTime={isDayTime} windowCoords={windowCoords} />
-          ))
-        )}
-      </div>
+    <div className="grid gap-5">
+      {closestFlights.length === 0 ? (
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-950/60 py-24 text-center opacity-70 text-2xl italic">
+          No aircraft in corridor.
+        </div>
+      ) : (
+        closestFlights.map((flight) => (
+          <FlightItem key={flight.icao24} flight={flight} windowCoords={windowCoords} />
+        ))
+      )}
     </div>
   );
 }
 
-function FlightItem({ flight, isDayTime, windowCoords }) {
-  const bearing = calculateBearing(windowCoords.lat, windowCoords.lng, flight.latitude, flight.longitude);
+function FlightItem({ flight, windowCoords }) {
+  const bearing = Number.isFinite(flight.latitude) && Number.isFinite(flight.longitude)
+    ? calculateBearing(windowCoords.lat, windowCoords.lng, flight.latitude, flight.longitude)
+    : 0;
   const country = flight.country || 'Unknown';
+  const callsign = flight.callsign || 'Unknown';
   const heightFeet = Number.isFinite(flight.altitude)
-    ? `${Math.round(flight.altitude * 3.28084)}'`
+    ? `${Math.round(flight.altitude * 3.28084).toLocaleString()} ft`
     : 'N/A';
   const speedMph = Number.isFinite(flight.velocity)
     ? `${Math.round(flight.velocity * 2.23694)} mph`
     : 'N/A';
-  const distanceKm = Number.isFinite(flight.distanceKm)
-    ? flight.distanceKm
-    : (Number.isFinite(flight.latitude) && Number.isFinite(flight.longitude)
-      ? getDistance(windowCoords.lat, windowCoords.lng, flight.latitude, flight.longitude)
-      : null);
+  const distanceKm = Number.isFinite(flight.resolvedDistanceKm)
+    ? flight.resolvedDistanceKm
+    : null;
   const distanceMiles = Number.isFinite(distanceKm)
     ? `${(distanceKm * 0.621371).toFixed(distanceKm < 10 ? 1 : 0)} mi`
     : 'N/A';
-  
-  return (
-      <div
-        className={`p-4 rounded-2xl flex justify-between items-center transition-all group ${isDayTime ? 'bg-white/50 hover:bg-white/80' : 'bg-white/5 hover:bg-white/10'}`}
-      >
 
-      <div className="flex items-center gap-4">
-        <div
-          className="w-8 h-8 flex items-center justify-center transition-transform duration-500"
-          style={{ transform: `rotate(${bearing}deg)` }}
-        >
-          <ArrowUp className={`w-5 h-5 ${isDayTime ? 'text-blue-600' : 'text-blue-400'}`} />
+  return (
+    <article className="rounded-3xl border border-zinc-800 bg-zinc-950/70 px-5 py-6 md:px-8 md:py-8">
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex items-center gap-4 md:gap-6 min-w-0">
+          <div
+            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center shrink-0"
+            style={{ transform: `rotate(${bearing}deg)` }}
+          >
+            <ArrowUp className="w-12 h-12 md:w-14 md:h-14 text-sky-400" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-3xl md:text-5xl font-semibold leading-none tracking-tight truncate">
+              {callsign}
+            </h2>
+            <p className="mt-2 text-base md:text-xl text-slate-400 truncate">Country: {country}</p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-bold leading-tight">{flight.callsign}</h3>
-          <p className={`text-[10px] tracking-tight ${isDayTime ? 'text-slate-500' : 'text-slate-400'}`}>Country: {country}</p>
+        <div className="text-right shrink-0">
+          <p className="text-2xl md:text-4xl font-mono font-semibold text-sky-300">{
+            distanceMiles
+          }</p>
+          <p className="mt-2 text-base md:text-xl text-slate-300">Altitude: {heightFeet}</p>
+          <p className="mt-1 text-base md:text-xl text-slate-400">Speed: {speedMph}</p>
         </div>
       </div>
-      <div className="text-right">
-        <p className="text-sm font-mono font-bold text-blue-500/80">Height: {heightFeet}</p>
-        <p className={`text-[10px] opacity-60 ${isDayTime ? 'text-slate-500' : 'text-slate-400'}`}>
-          Speed: {speedMph}
-        </p>
-        <p className={`text-[10px] opacity-60 ${isDayTime ? 'text-slate-500' : 'text-slate-400'}`}>
-          Distance: {distanceMiles}
-        </p>
-      </div>
-    </div>
+    </article>
   );
 }
 
