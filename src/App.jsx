@@ -8,6 +8,16 @@ const POLL_INTERVAL_MS = 10000;
 const ENTER_SETUP_MS = 80;
 const EXIT_ANIMATION_MS = 700;
 const EARTH_RADIUS_KM = 6371;
+const CLOCK_TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: true,
+});
+const CLOCK_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+});
 
 const toRadians = (degrees) => (degrees * Math.PI) / 180;
 const toDegrees = (radians) => (radians * 180) / Math.PI;
@@ -111,7 +121,7 @@ const projectFlightPosition = (flight, now) => {
 function App() {
   const [flightStates, setFlightStates] = useState({});
   const [error, setError] = useState(null);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -176,11 +186,9 @@ function App() {
   }, [cleanupTick]);
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-zinc-950 text-slate-100">
+    <div className="h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
       <main className="relative h-full w-full p-4 md:p-8">
-        <section className="h-full w-full rounded-3xl border border-zinc-800/80 bg-zinc-900/40 p-4 md:p-7 shadow-2xl">
-          <FlightList flightStates={flightStates} windowCoords={WINDOW_COORDS} now={now} />
-        </section>
+        <FlightList flightStates={flightStates} windowCoords={WINDOW_COORDS} now={now} />
         {error && (
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 rounded-xl text-base border shadow-xl bg-red-950/80 border-red-800 text-red-300">
             {error}
@@ -229,19 +237,35 @@ function FlightList({ flightStates, windowCoords, now }) {
   return (
     <div className="h-full grid content-center gap-4 md:gap-5">
       {visibleFlights.length === 0 ? (
-        <div className="rounded-3xl border border-zinc-800/80 bg-zinc-950/40 py-24 text-center opacity-70 text-2xl italic">
-          No aircraft in corridor.
+        <div className="py-24 text-center">
+          <DigitalClock now={now} />
+          <p className="mt-4 text-2xl font-light text-slate-300/90">No aircraft in corridor.</p>
         </div>
       ) : (
         visibleFlights.map((flight) => (
-          <FlightItem key={flight.icao24} flight={flight} now={now} />
+          <FlightItem key={flight.icao24} flight={flight} />
         ))
       )}
     </div>
   );
 }
 
-function FlightItem({ flight, now }) {
+function DigitalClock({ now }) {
+  const date = new Date(now);
+
+  return (
+    <div>
+      <p className="text-6xl md:text-8xl font-light tracking-tight tabular-nums text-slate-100">
+        {CLOCK_TIME_FORMATTER.format(date)}
+      </p>
+      <p className="mt-3 text-base md:text-xl font-light tracking-[0.08em] uppercase text-slate-400">
+        {CLOCK_DATE_FORMATTER.format(date)}
+      </p>
+    </div>
+  );
+}
+
+function FlightItem({ flight }) {
   const country = flight.country || 'Unknown';
   const callsign = flight.callsign || 'Unknown';
   const heightFeet = Number.isFinite(flight.altitude)
@@ -267,7 +291,7 @@ function FlightItem({ flight, now }) {
 
   return (
     <article
-      className={`rounded-3xl border border-zinc-800/80 bg-zinc-950/55 px-5 py-6 md:px-8 md:py-8 transition-all duration-700 ease-out will-change-transform ${animationClass}`}
+      className={`px-5 py-6 md:px-8 md:py-8 transition-all duration-700 ease-out will-change-transform ${animationClass}`}
     >
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-4 md:gap-6 min-w-0">
