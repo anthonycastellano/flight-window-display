@@ -145,12 +145,12 @@ export const filterVisibleFlights = (flights) => {
       if (dist > VIEW_CONFIG.maxDistanceKm) return false;
       
       // 2. Check if plane is within the window's angular sector (bearing from window)
-      const bearingFromWindow = calculateBearing(
+      const bearingFromWindow = (calculateBearing(
         WINDOW_COORDS.lat,
         WINDOW_COORDS.lng,
         flight.latitude,
         flight.longitude
-      );
+      ) + 360) % 360;
 
       const isWithinSector =
         (bearingFromWindow >= VIEW_CONFIG.headingRange[0] && bearingFromWindow <= 360) ||
