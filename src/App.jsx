@@ -20,7 +20,6 @@ L.Marker.prototype.options.icon = DefaultIcon;
 const EDW_COORDS = [25.79, -80.18]; // Edgewater, Miami
 
 function App() {
-  const [flights, setFlights] = Lucide
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
