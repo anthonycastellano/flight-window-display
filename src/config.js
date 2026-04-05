@@ -5,7 +5,7 @@ export const WINDOW_COORDS = {
 
 export const VIEW_CONFIG = {
   headingRange: [300, 60], // North-ish: 300 to 360, and 0 to 60
-  maxDistanceKm: 5,       // Distance from window to look at
+  maxDistanceKm: 8,       // Distance from window to look at
 };
 
 export const DAY_TIME_CONFIG = {
